@@ -1,10 +1,9 @@
 #ifndef MINI_TEST_H
 #define MINI_TEST_H
 
-// Custom testing framework.
-// TEST_CASE registers a function, CHECK / CHECK_EQ record failures without stopping the test.
+// Custom testing framework
 
-#include <cstdio>
+#include <iostream>
 #include <vector>
 
 namespace minitest
@@ -22,9 +21,9 @@ namespace minitest
     return tests;
   }
 
-  inline int& failureCount()
+  inline unsigned& failureCount()
   {
-    static int count = 0;
+    static unsigned count = 0;
     return count;
   }
 
@@ -35,17 +34,18 @@ namespace minitest
 
   inline int runAll()
   {
-    int failedTests = 0;
+    std::size_t failedTests = 0;
     for (const TestCase& test : registry())
     {
-      const int failuresBefore = failureCount();
+      const unsigned failuresBefore = failureCount();
       test.function();
       const bool passed = failureCount() == failuresBefore;
       if (!passed)
         ++failedTests;
-      std::printf("[%s] %s\n", passed ? "  OK  " : " FAIL ", test.name);
+      std::cout << "[" << (passed ? "  OK  " : " FAIL ") << "] " << test.name << std::endl;
     }
-    std::printf("\n%d of %zu tests failed\n", failedTests, registry().size());
+    std::size_t total = registry().size();
+    std::cout << (total - failedTests) << " of " << total << " tests passed" << std::endl;
     return failedTests == 0 ? 0 : 1;
   }
 
@@ -56,16 +56,6 @@ namespace minitest
   static const minitest::Registrar name##Registrar(#name, &name);                                            \
   static void name()
 
-#define CHECK(expr)                                                                                          \
-  do                                                                                                         \
-  {                                                                                                          \
-    if (!(expr))                                                                                             \
-    {                                                                                                        \
-      ++minitest::failureCount();                                                                            \
-      std::printf("%s(%d): CHECK failed: %s\n", __FILE__, __LINE__, #expr);                                  \
-    }                                                                                                        \
-  } while (false)
-
 #define CHECK_EQ(actual, expected)                                                                           \
   do                                                                                                         \
   {                                                                                                          \
@@ -74,8 +64,9 @@ namespace minitest
     if (!(actualValue == expectedValue))                                                                     \
     {                                                                                                        \
       ++minitest::failureCount();                                                                            \
-      std::printf("%s(%d): CHECK_EQ failed: %s\n    actual:   %s\n    expected: %s\n", __FILE__, __LINE__,   \
-                  #actual, toString(actualValue), toString(expectedValue));                                  \
+      std::cout << __FILE__ << "(" << __LINE__ << "): " << "CHECK_EQ failed: " << #actual << std::endl       \
+                << "    actual: " << toString(actualValue) << std::endl                                      \
+                << "    expected: " << toString(expectedValue) << std::endl;                                 \
     }                                                                                                        \
   } while (false)
 
