@@ -86,8 +86,7 @@ TEST_CASE(overlappingEdges)
 
 TEST_CASE(polygonWithHoleViaBridge)
 {
-  // Outer square 0..4 and inner square 1..3 traversed in the same direction, joined at x = 0..1
-  // along y = 0. Under even-odd the inner square is a hole.
+  // Outer square 0..4 and inner square 1..3 traversed in the same direction. Under even-odd the inner square is a hole.
   const auto withHole = polygonXY(
     { { 0, 0 }, { 4, 0 }, { 4, 4 }, { 0, 4 }, { 0, 0 }, { 1, 1 }, { 3, 1 }, { 3, 3 }, { 1, 3 }, { 1, 1 } });
   CHECK_EQ(pointInPolygon(withHole, pointXY(2., 2.)), Outside);
