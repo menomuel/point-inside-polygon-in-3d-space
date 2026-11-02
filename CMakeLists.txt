@@ -11,7 +11,7 @@ add_library(point_in_polygon
   include/point_in_polygon.h
   src/point_in_polygon.cpp
   src/vector_math.h
- "tests/mini_test.h" "tests/test_main.cpp" "tests/test_utils.h")
+)
 
 target_include_directories(point_in_polygon PUBLIC ${CMAKE_CURRENT_SOURCE_DIR}/include)
 

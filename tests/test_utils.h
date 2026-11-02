@@ -53,4 +53,24 @@ inline std::vector<Point3d> uShape()
   return polygonXY({ { 0., 0. }, { 3., 0. }, { 3., 3. }, { 2., 3. }, { 2., 1. }, { 1., 1. }, { 1., 3. }, { 0., 3. } });
 }
 
+// Self-intersecting "bow tie": two triangles touching at (1, 1) with opposite orientation.
+inline std::vector<Point3d> bowTie()
+{
+  return polygonXY({ { 0., 0. }, { 2., 2. }, { 2., 0. }, { 0., 2. } });
+}
+
+// Five-pointed star drawn with a single closed line (vertices of a regular pentagon taken
+// in the order 0, 2, 4, 1, 3), centred at the origin with circumradius 1.
+inline std::vector<Point3d> pentagram()
+{
+  const double pi = std::acos(-1.);
+  std::vector<Point3d> points;
+  for (int i = 0; i < 5; ++i)
+  {
+    const double angle = pi / 2. + 2. * pi * ((2 * i) % 5) / 5.;
+    points.push_back({ std::cos(angle), std::sin(angle), 0. });
+  }
+  return points;
+}
+
 #endif // TEST_UTILS_H

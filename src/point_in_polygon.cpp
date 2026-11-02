@@ -129,9 +129,9 @@ namespace
     return false;
   }
 
-  PointLocation classifyInPlane(const std::vector<Point3d>& points, const Plane& plane, const Vector2d& pointOnPlane, double tolerance)
+  PointLocation classifyInPlane(const std::vector<Point3d>& points, const Plane& plane, const Vector2d& pointOnPlane, double tol, FillRule fillRule)
   {
-    const double tol2 = tolerance * tolerance;
+    const double tol2 = tol * tol;
     long long winding = 0;
 
     Vector2d a = plane.project(points.back());
@@ -157,17 +157,18 @@ namespace
       a = b;
     }
 
-    return winding != 0 ? PointLocation::Inside : PointLocation::Outside;
+    const bool inside = fillRule == FillRule::EvenOdd ? (winding % 2 != 0) : (winding != 0);
+    return inside ? PointLocation::Inside : PointLocation::Outside;
   }
 
 } // namespace
 
-PointLocation pointInPolygon(const std::vector<Point3d>& polygonPoints, const Point3d& point)
+PointLocation pointInPolygon(const std::vector<Point3d>& polygonPoints, const Point3d& point) noexcept
 {
-  return pointInPolygon(polygonPoints, point, 0.);
+  return pointInPolygon(polygonPoints, point, Options{});
 }
 
-PointLocation pointInPolygon(const std::vector<Point3d>& polygonPoints, const Point3d& point, double tolerance)
+PointLocation pointInPolygon(const std::vector<Point3d>& polygonPoints, const Point3d& point, Options options) noexcept
 {
   if (polygonPoints.empty() || !isFinite(point))
     return PointLocation::Outside;
@@ -180,8 +181,8 @@ PointLocation pointInPolygon(const std::vector<Point3d>& polygonPoints, const Po
     box.add(p);
   }
 
-  const bool userTolerance = std::isfinite(tolerance) && tolerance > 0.;
-  const double tol = userTolerance ? tolerance : RelativeTolerance * box.diagonal();
+  const bool userTolerance = std::isfinite(options.tolerance) && options.tolerance > 0.;
+  const double tol = userTolerance ? options.tolerance : RelativeTolerance * box.diagonal();
 
   if (!box.contains(point, tol))
     return PointLocation::Outside;
@@ -196,5 +197,5 @@ PointLocation pointInPolygon(const std::vector<Point3d>& polygonPoints, const Po
   if (std::abs(plane.calculateSignedDistance(point)) > tol)
     return PointLocation::Outside;
 
-  return classifyInPlane(polygonPoints, plane, plane.project(point), tol);
+  return classifyInPlane(polygonPoints, plane, plane.project(point), tol, options.fillRule);
 }

@@ -17,8 +17,23 @@ enum class PointLocation
   Boundary
 };
 
-PointLocation pointInPolygon(const std::vector<Point3d>& polygonPoints, const Point3d& point);
+// Rule that defines "inside" for self-intersecting polygons. Both rules agree for simple polygons.
+enum class FillRule
+{
+  EvenOdd, // inside if a ray from the point crosses the boundary an odd number of times
+  NonZero  // inside if the boundary winds around the point a non-zero number of times
+};
 
-PointLocation pointInPolygon(const std::vector<Point3d>& polygonPoints, const Point3d& point, double tolerance);
+struct Options
+{
+  // Distance at which a point is considered to lie on the boundary or in the polygon plane.
+  // A non-positive (or non-finite) value selects a default relative to the polygon size.
+  double tolerance{ 0. };
+  FillRule fillRule{ FillRule::EvenOdd };
+};
+
+PointLocation pointInPolygon(const std::vector<Point3d>& polygonPoints, const Point3d& point) noexcept;
+
+PointLocation pointInPolygon(const std::vector<Point3d>& polygonPoints, const Point3d& point, Options options) noexcept;
 
 #endif // POINT_IN_POLYGON_H

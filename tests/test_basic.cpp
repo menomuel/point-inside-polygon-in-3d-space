@@ -93,13 +93,13 @@ TEST_CASE(tiltedPlane)
 TEST_CASE(explicitTolerance)
 {
   const auto square = unitSquare();
-  double tolerance = 0.1;
-  CHECK_EQ(pointInPolygon(square, pointXY(0.5, 0.05), tolerance), Boundary);
-  CHECK_EQ(pointInPolygon(square, pointXY(0.5, -0.05), tolerance), Boundary);
-  CHECK_EQ(pointInPolygon(square, pointXY(0.5, 0.15), tolerance), Inside);
-  CHECK_EQ(pointInPolygon(square, pointXY(0.5, -0.15), tolerance), Outside);
-  CHECK_EQ(pointInPolygon(square, { 0.5, 0.5, 0.05 }, tolerance), Inside);
-  CHECK_EQ(pointInPolygon(square, { 0.5, 0.5, 0.15 }, tolerance), Outside);
+  Options options { 0.1 };
+  CHECK_EQ(pointInPolygon(square, pointXY(0.5, 0.05), options), Boundary);
+  CHECK_EQ(pointInPolygon(square, pointXY(0.5, -0.05), options), Boundary);
+  CHECK_EQ(pointInPolygon(square, pointXY(0.5, 0.15), options), Inside);
+  CHECK_EQ(pointInPolygon(square, pointXY(0.5, -0.15), options), Outside);
+  CHECK_EQ(pointInPolygon(square, { 0.5, 0.5, 0.05 }, options), Inside);
+  CHECK_EQ(pointInPolygon(square, { 0.5, 0.5, 0.15 }, options), Outside);
 
   // Same points with default tolerance
   CHECK_EQ(pointInPolygon(square, pointXY(0.5, 0.05)), Inside);

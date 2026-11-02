@@ -68,9 +68,9 @@ TEST_CASE(nonFiniteInput)
 TEST_CASE(invalidToleranceFallsBackToDefault)
 {
   const auto square = unitSquare();
-  double tolerance = std::numeric_limits<double>::quiet_NaN();
-  CHECK_EQ(pointInPolygon(square, pointXY(0.5, 0.5), tolerance), Inside);
-  CHECK_EQ(pointInPolygon(square, pointXY(0.5, 0.), tolerance), Boundary);
-  tolerance = -1.;
-  CHECK_EQ(pointInPolygon(square, pointXY(0.5, 0.01), tolerance), Inside);
+  Options options { std::numeric_limits<double>::quiet_NaN() };
+  CHECK_EQ(pointInPolygon(square, pointXY(0.5, 0.5), options), Inside);
+  CHECK_EQ(pointInPolygon(square, pointXY(0.5, 0.), options), Boundary);
+  options.tolerance = -1.;
+  CHECK_EQ(pointInPolygon(square, pointXY(0.5, 0.01), options), Inside);
 }
