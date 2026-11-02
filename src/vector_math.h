@@ -1,7 +1,7 @@
 #ifndef POINT_IN_POLYGON_VECTOR_MATH_H
 #define POINT_IN_POLYGON_VECTOR_MATH_H
 
-#include "point_in_polygon.h"
+#include "pip/point_in_polygon.h"
 
 #include <cmath>
 
@@ -74,12 +74,13 @@ namespace pip
 
   inline double length(const Vector3d& a)
   {
-    return std::sqrt(dot(a, a));
+    return std::hypot(a.x, a.y, a.z);
   }
 
   inline Vector3d normalize(const Vector3d& a)
   {
-    return a * (1. / length(a));
+    const double len = length(a);
+    return { a.x / len, a.y / len, a.z / len };
   }
 
   // Squared distance from p to the segment [a, b]; works for a zero-length segment too.

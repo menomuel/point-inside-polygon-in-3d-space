@@ -1,7 +1,7 @@
 #ifndef TEST_UTILS_H
 #define TEST_UTILS_H
 
-#include "point_in_polygon.h"
+#include "pip/point_in_polygon.h"
 
 #include <cmath>
 #include <initializer_list>

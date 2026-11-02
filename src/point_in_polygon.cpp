@@ -1,8 +1,10 @@
-#include "point_in_polygon.h"
+#include "pip/point_in_polygon.h"
 
 #include <algorithm>
 #include <cmath>
 #include <cstddef>
+#include <cstdint>
+#include <optional>
 
 #include "vector_math.h"
 
@@ -65,27 +67,36 @@ namespace
     Vector3d normal;
   };
 
-  bool tryComputePlane(const std::vector<Point3d>& points, double tol, Plane& plane)
+  std::optional<Plane> tryComputePlane(const std::vector<Point3d>& points, double tol)
   {
+    if (points.empty())
+      return std::nullopt;
+
+    const std::size_t n = points.size();
     const Point3d& origin = points[0];
 
+    // Calculate newell normal
+    Vector3d newell;
     // Calculate point farthest from origin
     Vector3d farthest;
     double farthestDist2 = 0.;
-    for (const Point3d& p : points)
+    for (std::size_t i = 0; i < n; ++i)
     {
-      const Vector3d vec = p - origin;
-      const double dist2 = dot(vec, vec);
+      const Vector3d a = points[i] - origin;
+      const Vector3d b = points[(i + 1) % n] - origin;
+      newell = newell + cross(a, b);
+
+      const double dist2 = dot(a, a);
       if (dist2 > farthestDist2)
       {
         farthestDist2 = dist2;
-        farthest = vec;
+        farthest = a;
       }
     }
 
     const double farthestDist = std::sqrt(farthestDist2);
     if (farthestDist <= tol)
-      return false;
+      return std::nullopt;
 
     // Find largest triangle spanned by origin, the vertex farthest from it and a third one
     Vector3d triangle;
@@ -103,21 +114,27 @@ namespace
 
     // Calculate distance of a third triangle vertex to the line (origin, farthest).
     if (triangleLength <= tol * farthestDist)
-      return false;
+      return std::nullopt;
 
-    const Vector3d normal = triangle * (1. / triangleLength);
+    const double newellLength = length(newell);
+    const Vector3d normal = newellLength > triangleLength ? normalize(newell) : normalize(triangle);
+
+    Plane plane;
     const Vector3d inPlane = farthest - normal * dot(farthest, normal);
     plane.origin = origin;
     plane.normal = normal;
     plane.u = normalize(inPlane);
     plane.v = cross(normal, plane.u);
-    return true;
+    return plane;
   }
 
   // Determine if the query point lies on the linear polyline
   bool isOnPolyline(const std::vector<Point3d>& points, const Point3d& point, double tol)
   {
     const std::size_t n = points.size();
+    if (n == 0)
+      return false;
+
     const Vector3d p = point - points[0];
     for (std::size_t i = 0; i < n; ++i)
     {
@@ -132,7 +149,7 @@ namespace
   PointLocation classifyInPlane(const std::vector<Point3d>& points, const Plane& plane, const Vector2d& pointOnPlane, double tol, FillRule fillRule)
   {
     const double tol2 = tol * tol;
-    long long winding = 0;
+    std::int64_t winding = 0;
 
     Vector2d a = plane.project(points.back());
     for (const Point3d& vertex : points)
@@ -144,15 +161,13 @@ namespace
 
       Vector2d segmentVec = b - a;
       Vector2d targetVec = pointOnPlane - a;
-      if (a.y <= pointOnPlane.y && pointOnPlane.y < b.y)
+      if (a.y <= pointOnPlane.y && pointOnPlane.y < b.y && cross(segmentVec, targetVec) > 0.) // upward edge, point on its left
       {
-        if (cross(segmentVec, targetVec) > 0.) // upward edge, point on its left
-          ++winding;
+        ++winding;
       }
-      else if (b.y <= pointOnPlane.y && pointOnPlane.y < a.y)
+      else if (b.y <= pointOnPlane.y && pointOnPlane.y < a.y && cross(segmentVec, targetVec) < 0.) // downward edge, point on its right
       {
-        if (cross(segmentVec, targetVec) < 0.) // downward edge, point on its right
-          --winding;
+        --winding;
       }
       a = b;
     }
@@ -187,15 +202,15 @@ PointLocation pointInPolygon(const std::vector<Point3d>& polygonPoints, const Po
   if (!box.contains(point, tol))
     return PointLocation::Outside;
 
-  Plane plane;
-  if (!tryComputePlane(polygonPoints, tol, plane))
+  const std::optional<Plane> plane = tryComputePlane(polygonPoints, tol);
+  if (!plane)
   {
     // Degenerate polygon (a point or a line)
     return isOnPolyline(polygonPoints, point, tol) ? PointLocation::Boundary : PointLocation::Outside;
   }
 
-  if (std::abs(plane.calculateSignedDistance(point)) > tol)
+  if (std::abs(plane->calculateSignedDistance(point)) > tol)
     return PointLocation::Outside;
 
-  return classifyInPlane(polygonPoints, plane, plane.project(point), tol, options.fillRule);
+  return classifyInPlane(polygonPoints, *plane, plane->project(point), tol, options.fillRule);
 }

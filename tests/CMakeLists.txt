@@ -4,7 +4,7 @@ add_executable(point_in_polygon_tests
   test_main.cpp
   test_basic.cpp
   test_degenerate.cpp
- test_selfIntersecting.cpp)
+  test_selfIntersecting.cpp)
 
 target_link_libraries(point_in_polygon_tests PRIVATE point_in_polygon)
 

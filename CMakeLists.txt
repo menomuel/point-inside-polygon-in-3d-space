@@ -8,7 +8,7 @@ option(PIP_BUILD_TESTS "Build the unit tests" ON)
 set(CMAKE_CXX_EXTENSIONS OFF)
 
 add_library(point_in_polygon
-  include/point_in_polygon.h
+  include/pip/point_in_polygon.h
   src/point_in_polygon.cpp
   src/vector_math.h
 )
