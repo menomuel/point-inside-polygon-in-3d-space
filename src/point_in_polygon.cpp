@@ -131,10 +131,34 @@ namespace
 
   PointLocation classifyInPlane(const std::vector<Point3d>& points, const Plane& plane, const Vector2d& pointOnPlane, double tolerance)
   {
-    // TODO: implement winding number algorithm
-    return PointLocation::Inside;
-  }
+    const double tol2 = tolerance * tolerance;
+    long long winding = 0;
 
+    Vector2d a = plane.project(points.back());
+    for (const Point3d& vertex : points)
+    {
+      const Vector2d b = plane.project(vertex);
+
+      if (calculateDistanceToSegmentSquared(pointOnPlane, a, b) <= tol2)
+        return PointLocation::Boundary;
+
+      Vector2d segmentVec = b - a;
+      Vector2d targetVec = pointOnPlane - a;
+      if (a.y <= pointOnPlane.y && pointOnPlane.y < b.y)
+      {
+        if (cross(segmentVec, targetVec) > 0.) // upward edge, point on its left
+          ++winding;
+      }
+      else if (b.y <= pointOnPlane.y && pointOnPlane.y < a.y)
+      {
+        if (cross(segmentVec, targetVec) < 0.) // downward edge, point on its right
+          --winding;
+      }
+      a = b;
+    }
+
+    return winding != 0 ? PointLocation::Inside : PointLocation::Outside;
+  }
 
 } // namespace
 
