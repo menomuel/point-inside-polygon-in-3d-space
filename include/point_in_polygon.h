@@ -19,4 +19,6 @@ enum class PointLocation
 
 PointLocation pointInPolygon(const std::vector<Point3d>& polygonPoints, const Point3d& point);
 
+PointLocation pointInPolygon(const std::vector<Point3d>& polygonPoints, const Point3d& point, double tolerance);
+
 #endif // POINT_IN_POLYGON_H
