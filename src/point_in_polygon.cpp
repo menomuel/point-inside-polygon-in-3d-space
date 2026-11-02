@@ -193,5 +193,8 @@ PointLocation pointInPolygon(const std::vector<Point3d>& polygonPoints, const Po
     return isOnPolyline(polygonPoints, point, tol) ? PointLocation::Boundary : PointLocation::Outside;
   }
 
+  if (std::abs(plane.calculateSignedDistance(point)) > tol)
+    return PointLocation::Outside;
+
   return classifyInPlane(polygonPoints, plane, plane.project(point), tol);
 }
