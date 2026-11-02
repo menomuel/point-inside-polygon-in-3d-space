@@ -2,6 +2,7 @@
 
 #include <algorithm>
 #include <cmath>
+#include <cstddef>
 
 #include "vector_math.h"
 
@@ -45,6 +46,96 @@ namespace
     Point3d max;
   };
 
+  struct Plane
+  {
+    Vector2d project(const Point3d& p) const
+    {
+      const Vector3d d = p - origin;
+      return { dot(d, u), dot(d, v) };
+    }
+
+    double calculateSignedDistance(const Point3d& p) const
+    {
+      return dot(p - origin, normal);
+    }
+
+    Point3d origin;
+    Vector3d u;
+    Vector3d v;
+    Vector3d normal;
+  };
+
+  bool tryComputePlane(const std::vector<Point3d>& points, double tol, Plane& plane)
+  {
+    const Point3d& origin = points[0];
+
+    // Calculate point farthest from origin
+    Vector3d farthest;
+    double farthestDist2 = 0.;
+    for (const Point3d& p : points)
+    {
+      const Vector3d vec = p - origin;
+      const double dist2 = dot(vec, vec);
+      if (dist2 > farthestDist2)
+      {
+        farthestDist2 = dist2;
+        farthest = vec;
+      }
+    }
+
+    const double farthestDist = std::sqrt(farthestDist2);
+    if (farthestDist <= tol)
+      return false;
+
+    // Find largest triangle spanned by origin, the vertex farthest from it and a third one
+    Vector3d triangle;
+    double triangleLength = 0.;
+    for (const Point3d& p : points)
+    {
+      const Vector3d c = cross(farthest, p - origin);
+      const double len = length(c);
+      if (len > triangleLength)
+      {
+        triangleLength = len;
+        triangle = c;
+      }
+    }
+
+    // Calculate distance of a third triangle vertex to the line (origin, farthest).
+    if (triangleLength <= tol * farthestDist)
+      return false;
+
+    const Vector3d normal = triangle * (1. / triangleLength);
+    const Vector3d inPlane = farthest - normal * dot(farthest, normal);
+    plane.origin = origin;
+    plane.normal = normal;
+    plane.u = normalize(inPlane);
+    plane.v = cross(normal, plane.u);
+    return true;
+  }
+
+  // Determine if the query point lies on the linear polyline
+  bool isOnPolyline(const std::vector<Point3d>& points, const Point3d& point, double tol)
+  {
+    const std::size_t n = points.size();
+    const Vector3d p = point - points[0];
+    for (std::size_t i = 0; i < n; ++i)
+    {
+      const Vector3d a = points[i] - points[0];
+      const Vector3d b = points[(i + 1) % n] - points[0];
+      if (calculateDistanceToSegmentSquared(p, a, b) <= tol * tol)
+        return true;
+    }
+    return false;
+  }
+
+  PointLocation classifyInPlane(const std::vector<Point3d>& points, const Plane& plane, const Vector2d& pointOnPlane, double tolerance)
+  {
+    // TODO: implement winding number algorithm
+    return PointLocation::Inside;
+  }
+
+
 } // namespace
 
 PointLocation pointInPolygon(const std::vector<Point3d>& polygonPoints, const Point3d& point)
@@ -71,5 +162,12 @@ PointLocation pointInPolygon(const std::vector<Point3d>& polygonPoints, const Po
   if (!box.contains(point, tol))
     return PointLocation::Outside;
 
-  return PointLocation::Outside; // TODO: process plane, linear case and general
+  Plane plane;
+  if (!tryComputePlane(polygonPoints, tol, plane))
+  {
+    // Degenerate polygon (a point or a line)
+    return isOnPolyline(polygonPoints, point, tol) ? PointLocation::Boundary : PointLocation::Outside;
+  }
+
+  return classifyInPlane(polygonPoints, plane, plane.project(point), tol);
 }
